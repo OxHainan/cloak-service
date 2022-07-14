@@ -5,7 +5,11 @@ import "./State.sol";
 import "./Proxy.sol";
 
 contract StateFactory is BaseState, Proxy {
-    function updateState(bytes32 proof, bytes32[] memory keys, bytes32[] memory vals) external onlyMaster {
+    function updateState(
+        bytes32 proof, 
+        bytes32[] memory keys, 
+        bytes32[] memory vals
+    ) external onlyMaster {
         super._updateState(proof, keys, vals);
     }
 
@@ -19,7 +23,8 @@ contract StateFactory is BaseState, Proxy {
     }
 
     function upgrade(address logic) external onlyMaster {
-        require(super._getRoolBack() != logic, "StateFactory: new contract should be different");
+        require(super._getRoolBack() != logic, 
+            "StateFactory: new contract should be different");
 
         super._setRollBack(logic);
         super._setCodeHash(logic);
@@ -27,7 +32,8 @@ contract StateFactory is BaseState, Proxy {
 
     function cancel(address master) external onlyMaster {
         address logic = super._getRoolBack();
-        require(logic != address(0), "StateFactory: logic is the zero address");
+        require(logic != address(0), 
+            "StateFactory: logic is the zero address");
 
         super._setImplementation(logic);
         super._setMaster(master);

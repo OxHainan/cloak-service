@@ -8,13 +8,14 @@ abstract contract Proxy {
     bytes32 private constant _MASTER_SLOT = 0x302d5a897102d13e0d906d81acedf7bb60726548606cbf8d04bc3a235dbfaf53;
     // this is the keccak 256 hash of "cloak.proxy.implementation" subtracted by 1
     bytes32 private constant _IMPLEMENTATION_SLOT = 0x5596e004f64113a6e801fc456673223a03c6c2e9c667b1b67d1c5c1a307ea3c3;
-   
+
     function _getImplementation() internal view returns(address) {
         return StorageSlot.getAddressSlot(_IMPLEMENTATION_SLOT).value;
     }
 
     function _setImplementation(address newImplementation) internal {
-        require(Address.isContract(newImplementation), "proxy: new implementation is not a contract");
+        require(Address.isContract(newImplementation), 
+            "proxy: new implementation is not a contract");
         StorageSlot.getAddressSlot(_IMPLEMENTATION_SLOT).value = newImplementation;
     }
 
@@ -28,16 +29,16 @@ abstract contract Proxy {
     }
 
     modifier onlyMaster() {
-        require(_getMaster() == msg.sender, "proxy: require master is failed");
+        require(_getMaster() == msg.sender, "proxy: caller is not the master");
         _;
     }
 
     modifier onlyMaster2() {
-        require(_getMaster() == tx.origin, "proxy: require tx origin is failed");
+        require(_getMaster() == tx.origin, "proxy: caller is not the master");
         _;
     }
 
-      function _delegate(address implementation) internal virtual {
+    function _delegate(address implementation) internal virtual {
         assembly {
             // Copy msg.data. We take full control of memory in this inline assembly
             // block because it will not return to Solidity code. We overwrite the

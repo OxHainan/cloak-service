@@ -31,7 +31,8 @@ abstract contract BaseState {
 
     function _setCodeHash(address account) internal {
         bytes32 codehash = Address.codehash(account);
-        require(codehash != _ACCOUNT_HASH, "BaseState: account is a common address");
+        require(codehash != _ACCOUNT_HASH, 
+            "BaseState: account is a common address");
         StorageSlot.getBytes32Slot(_CODEHASH_SLOT).value = codehash;
     }
 
@@ -39,7 +40,11 @@ abstract contract BaseState {
         return StorageSlot.getBytes32Slot(_CODEHASH_SLOT).value;
     }
 
-    function _updateState(bytes32 proof, bytes32[] memory keys, bytes32[] memory vals) internal {
+    function _updateState(
+        bytes32 proof, 
+        bytes32[] memory keys, 
+        bytes32[] memory vals
+    ) internal {
         bytes32 _proof = keccak256(abi.encodePacked(
             _getCodeHash(), State.compute_hash(keys)
         ));
