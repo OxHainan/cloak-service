@@ -19,14 +19,13 @@ abstract contract BaseState {
         StorageSlot.getAddressSlot(_ROLLBACK_SLOT).value = account;
     }
 
-    function _getRoolBack() internal view returns(address) {
+    function _getRollBack() internal view returns(address) {
         return StorageSlot.getAddressSlot(_ROLLBACK_SLOT).value;
     }
 
     function _clearRollBackAndCodeHash() internal {
         StorageSlot.getBytes32Slot(_CODEHASH_SLOT).value = bytes32(0);
         StorageSlot.getAddressSlot(_ROLLBACK_SLOT).value = address(0);
-
     }
 
     function _setCodeHash(address account) internal {

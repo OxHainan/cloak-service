@@ -13,9 +13,9 @@ contract StateFactory is BaseState, Proxy {
         super._updateState(proof, keys, vals);
     }
 
-    function escrow(address logic)  external onlyMaster2 {
-        require(super._getRoolBack() != logic, 
-            "StateFactory: contract cannot be the same as the state contract");
+    function escrow(address logic) external onlyMaster2 {
+        require(super._getRollBack() != logic, 
+            "StateFactory: the same as contract or not implementated");
         
         super._setRollBack(logic);
         super._setCodeHash(logic);
@@ -23,7 +23,7 @@ contract StateFactory is BaseState, Proxy {
     }
 
     function upgrade(address logic) external onlyMaster {
-        require(super._getRoolBack() != logic, 
+        require(super._getRollBack() != logic, 
             "StateFactory: new contract should be different");
 
         super._setRollBack(logic);
@@ -31,7 +31,7 @@ contract StateFactory is BaseState, Proxy {
     }
 
     function cancel(address master) external onlyMaster {
-        address logic = super._getRoolBack();
+        address logic = super._getRollBack();
         require(logic != address(0), 
             "StateFactory: logic is the zero address");
 

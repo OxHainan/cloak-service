@@ -30,6 +30,7 @@ contract Service is Network {
         IProxy proxy
     ) public onlyNotEscrow(address(proxy)) {
         address logic = proxy.setImplementation(state);
+        require(logic != state, "Service: contract escrow should be after implementated");
         proxy.escrow(logic);
         escrows[address(proxy)] = msg.sender;
     }

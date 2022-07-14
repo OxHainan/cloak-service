@@ -27,7 +27,7 @@
 | Cloak service is a protocol, designed to be a brige between Ethereum and the Cloak Network. |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 
-The core of the Cloak service protocol is to complete the functions of on-chain hosting and synchronization of user contracts in Ethereum. However, Cloak service also provides [Proxy Contract](/contracts/ProxyFactory.sol) to make the steps for joining our cloak network easier. To learn more about Cloak visit [Cloak docs](https://cloak-docs.readthedocs.io/en/latest/).
+The core of the Cloak service protocol is to complete the functions of on-chain hosting and synchronization of user contracts in Ethereum. Furthermore, Cloak service also provides [Proxy Contract](/contracts/ProxyFactory.sol) to make the steps for joining our cloak network easier. To learn more about Cloak visit [Cloak docs](https://cloak-docs.readthedocs.io/en/latest/).
 
 
 ---
