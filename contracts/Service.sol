@@ -4,6 +4,7 @@ pragma solidity >=0.8.7;
 import "./interface/proxy.sol";
 import "./Network.sol";
 import "./utils/Address.sol";
+import "./ProxyFactory.sol";
 
 contract Service is Network {
     using Address for address;
@@ -61,12 +62,19 @@ contract Service is Network {
     function updateState(
         address[] memory proxy, 
         bytes[] memory data
-    ) public  {
+    ) public {
         require(proxy.length == data.length, 
             "Service: both length not equal");
 
         for(uint8 i = 0; i < proxy.length; i++) {
             updateState(proxy[i], data[i]);
         }
+    }
+
+    event ResponseNewProxy(address indexed newproxy);
+    function createNewProxy() public {
+        ProxyFactory proxy = new ProxyFactory();
+        proxy.setMaster(msg.sender);
+        emit ResponseNewProxy(address(proxy));
     }
 }

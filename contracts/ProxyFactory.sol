@@ -8,6 +8,10 @@ contract ProxyFactory is Proxy {
         super._setMaster(msg.sender);
     }
 
+    function setMaster(address newMaster) external onlyMaster {
+        super._setMaster(newMaster);
+    }
+
     function setImplementation(
         address newImplementation
     ) external onlyMaster2 returns (address oldImplementation) {

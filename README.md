@@ -55,8 +55,6 @@ truffle compile
 
 ### Testing
 
-Run [Mocha](https://mochajs.org/) to test the contracts:
-
 ```bash
 truffle test
 ```
@@ -86,13 +84,18 @@ contract Demo {
 
 After deploying the contract, bind the demo contract's address to the proxy contract.
 
-```
+```javascript
 proxy.setImplementation(demo.address);
 ```
 
+by the way, cloak service also provides a quick way to create proxy generic contract, get it:
+
+```javascript
+service.createNewProxy()
+```
 If you want to join the cloak network, you can initiate an escrow transaction in our service contract.
 
-```
+```javascript
 service.escrow(proxy.address)
 ```
 
