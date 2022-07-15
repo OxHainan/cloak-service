@@ -28,7 +28,7 @@ contract('CloakService', async (accounts) => {
         await check_address(proxy.address, _MASTER_SLOT, service.address)
         await check_address(proxy.address, _LOGIC_SLOT, Logic1.address)
         await check_address(proxy.address, _IMPLEMENTATION_SLOT, State.address)
-        assert.equal(await service.escrows(proxy.address), accounts[0])
+        assert.equal((await service.escrows(proxy.address)).master, accounts[0])
         await check_code(proxy.address, _CODEHASH_SLOT, await web3.eth.getCode(Logic1.address));
     })
 
@@ -44,7 +44,7 @@ contract('CloakService', async (accounts) => {
         await service.cancel(proxy.address);
         await check_address(proxy.address, _MASTER_SLOT, accounts[0])
         await check_address(proxy.address, _IMPLEMENTATION_SLOT, Logic2.address)
-        assert.equal(await service.escrows(proxy.address), nil_address)
+        assert.equal((await service.escrows(proxy.address)).master, nil_address)
     });
 
     it("should escrow contract again", async () => {
@@ -54,7 +54,7 @@ contract('CloakService', async (accounts) => {
         await check_address(logic.address, _MASTER_SLOT, service.address)
         await check_address(logic.address, _LOGIC_SLOT, Logic2.address)
         await check_address(logic.address, _IMPLEMENTATION_SLOT, State.address)
-        assert.equal(await service.escrows(logic.address), accounts[0])
+        assert.equal((await service.escrows(logic.address)).master, accounts[0])
         await check_code(logic.address, _CODEHASH_SLOT, await web3.eth.getCode(Logic2.address));
     });
 
@@ -64,6 +64,12 @@ contract('CloakService', async (accounts) => {
         await service.transferOwnership(accounts[1]);
         assert(await service.owner() == accounts[1]);
         await service.transferOwnership(accounts[0], {from: accounts[1]});
+    })
+
+    it('should contract enchaned', async () => {
+        const service = await Service.deployed();
+        await service.privacyEnhancement(Proxy.address);
+        // await service.cancel(Proxy.address)
     })
 
     it("should update state to proxy", async () => {

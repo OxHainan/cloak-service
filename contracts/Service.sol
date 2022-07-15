@@ -9,20 +9,30 @@ import "./ProxyFactory.sol";
 contract Service is Network {
     using Address for address;
     address public state;
-    mapping(address=>address) public escrows;
+    struct Escrow {
+        address master;
+        bool enhanced;
+    }
+    
+    mapping(address=> Escrow) public escrows;
     constructor(address _state) {
         state = _state;
     }
 
     modifier onlyEscrow(address addr) {
-        require(escrows[addr] == msg.sender, 
+        require(escrows[addr].master == msg.sender, 
             "Service: caller is not the escrow master");
         _;
     }
 
     modifier onlyNotEscrow(address addr) {
-        require(escrows[addr] != msg.sender, 
+        require(escrows[addr].master != msg.sender, 
             "Service: contract has alread escrowed");
+        _;
+    }
+
+    modifier onlyNotEnhanced(address addr) {
+        require(escrows[addr].enhanced == false, "Service: escrow enchaned become effective");
         _;
     }
 
@@ -32,7 +42,11 @@ contract Service is Network {
         address logic = proxy.setImplementation(state);
         require(logic != state, "Service: contract escrow should be after implementated");
         proxy.escrow(logic);
-        escrows[address(proxy)] = msg.sender;
+        escrows[address(proxy)] = Escrow(msg.sender, false);
+    }
+
+    function privacyEnhancement(address proxy) public onlyEscrow(proxy) onlyNotEnhanced(proxy) {
+        escrows[proxy].enhanced = true;
     }
 
     // (TODO) Wait for all state synchronization to complete
@@ -46,7 +60,7 @@ contract Service is Network {
     // (TODO) Wait for all state synchronization to complete
     function cancel(
         IProxy proxy
-    ) public onlyEscrow(address(proxy)) {
+    ) public onlyEscrow(address(proxy)) onlyNotEnhanced(address(proxy)) {
         proxy.cancel(msg.sender);
         delete escrows[address(proxy)];
     }
@@ -55,7 +69,7 @@ contract Service is Network {
         address proxy, 
         bytes memory data
     ) public onlyActive {
-        if (escrows[proxy] != address(0)) {
+        if (escrows[proxy].master != address(0)) {
             proxy.functionCall(data);
         }
     }
