@@ -91,10 +91,10 @@ contract('CloakService', async (accounts) => {
                 await web3.eth.getStorageAt(state.address, _CODEHASH_SLOT),
                 web3.utils.keccak256(packed)
             ))
-        
+        let vvals = new Array(vals.length)
         for (let i = 0; i < vals.length; i++)
         {
-            vals[i] = web3.utils.leftPad(i, 64);
+            vals[i] = web3.utils.leftPad(i + 122, 64);
         }
 
         let request = await state.updateState.request(
@@ -105,5 +105,12 @@ contract('CloakService', async (accounts) => {
 
         await service.registerNode(accounts[0])
         await service.updateState(request.to, request.data)
+
+        for (let i = 0; i < vals.length; i++) {
+            assert.equal(
+                web3.utils.leftPad(await web3.eth.getStorageAt(state.address, keys[i]), 64),
+                vals[i]
+            )
+        }
     })
 });

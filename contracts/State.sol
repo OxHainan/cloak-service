@@ -45,7 +45,7 @@ abstract contract BaseState {
         bytes32[] memory vals
     ) internal {
         bytes32 _proof = keccak256(abi.encodePacked(
-            _getCodeHash(), State.compute_hash(keys)
+            _getCodeHash(), State.generateStateHash(keys)
         ));
 
         require(_proof == proof, "State: verification proof failed");
