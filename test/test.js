@@ -29,7 +29,7 @@ contract('CloakService', async (accounts) => {
         await check_address(proxy.address, _ADMIN_SLOT, await service.proxyFactory())
         await check_address(proxy.address, _EXECUTOR_SLOT, Service.address)
         await check_address(proxy.address, _ROLLBACK_SLOT, Logic1.address)
-        await check_address(proxy.address, _IMPLEMENTATION_SLOT, State.address)
+        await check_address(proxy.address, _IMPLEMENTATION_SLOT, await service.stateFactory())
         assert.equal((await service.escrows(proxy.address)).master, accounts[0])
         await check_code(proxy.address, _CODEHASH_SLOT, await web3.eth.getCode(Logic1.address));
     })
@@ -58,7 +58,7 @@ contract('CloakService', async (accounts) => {
         await check_address(proxy.address, _ADMIN_SLOT, await service.proxyFactory())
         await check_address(proxy.address, _EXECUTOR_SLOT, Service.address)
         await check_address(proxy.address, _ROLLBACK_SLOT, Logic2.address)
-        await check_address(proxy.address, _IMPLEMENTATION_SLOT, State.address)
+        await check_address(proxy.address, _IMPLEMENTATION_SLOT, await service.stateFactory())
         assert.equal((await service.escrows(logic.address)).master, accounts[0])
         await check_code(logic.address, _CODEHASH_SLOT, await web3.eth.getCode(Logic2.address));
     });
@@ -84,7 +84,7 @@ contract('CloakService', async (accounts) => {
         let vals = new Array(keys.length);
         for (let i = 0; i < keys.length; i++)
         {
-            vals[i] = await web3.eth.getStorageAt(state.address, i);
+            vals[i] = await web3.eth.getStorageAt(TransparentProxy.address, i);
             vals[i] = web3.utils.leftPad(vals[i], 64);
             keys[i] = web3.utils.leftPad(i, 64);
         }
@@ -92,7 +92,7 @@ contract('CloakService', async (accounts) => {
         let packed = web3.utils.encodePacked(vals[0], vals[1], vals[2]);
         let proof = web3.utils.keccak256(
             web3.utils.encodePacked(
-                await web3.eth.getStorageAt(state.address, _CODEHASH_SLOT),
+                await web3.eth.getStorageAt(TransparentProxy.address, _CODEHASH_SLOT),
                 web3.utils.keccak256(packed)
             ))
         
@@ -112,7 +112,7 @@ contract('CloakService', async (accounts) => {
 
         for (let i = 0; i < vals.length; i++) {
             assert.equal(
-                web3.utils.leftPad(await web3.eth.getStorageAt(state.address, keys[i]), 64),
+                web3.utils.leftPad(await web3.eth.getStorageAt(TransparentProxy.address, keys[i]), 64),
                 vals[i]
             )
         }

@@ -5,11 +5,13 @@ import "./interface/proxy.sol";
 import "./Network.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./ProxyFactory.sol";
+import "./StateFactory.sol";
 
 contract Service is Network {
     using Address for address;
     address public state;
-    ProxyFactory factory;
+    ProxyFactory _proxyFactory;
+    StateFactory _stateFactory;
 
     struct Escrow {
         address master;
@@ -17,9 +19,9 @@ contract Service is Network {
     }
     
     mapping(address=> Escrow) public escrows;
-    constructor(address _state) {
-        state = _state;
-        factory = new ProxyFactory();
+    constructor() {
+        _stateFactory = new StateFactory();
+        _proxyFactory = new ProxyFactory();
     }
 
     modifier onlyEscrow(address addr) {
@@ -40,18 +42,22 @@ contract Service is Network {
     }
 
     function proxyFactory() public view returns(address) {
-        return address(factory);
+        return address(_proxyFactory);
+    }
+
+    function stateFactory() public view returns(address) {
+        return address(_stateFactory);
     }
 
     function escrow(
         IProxy proxy
     ) public onlyNotEscrow(address(proxy)) {
-        address logic = factory.getImplementation(proxy);
-        require(logic != state, "Service: contract escrow should be after implementated");
-        require (factory.getAdmin(proxy) == address(factory), 
+        address logic = _proxyFactory.getImplementation(proxy);
+        require(logic != address(_stateFactory), "Service: contract escrow should be after implementated");
+        require (_proxyFactory.getAdmin(proxy) == address(_proxyFactory), 
             "Service: please complete changeAdmin in proxy first");
-            
-        factory.upgrade(proxy, state);
+
+        _proxyFactory.upgrade(proxy, address(_stateFactory));
         proxy.escrow(logic);
         escrows[address(proxy)] = Escrow(msg.sender, false);
     }
