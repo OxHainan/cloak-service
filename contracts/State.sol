@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.7;
 
-import "./utils/StorageSlot.sol";
-import "./utils/Address.sol";
+import "@openzeppelin/contracts/utils/StorageSlot.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "./utils/State.sol";
 
 abstract contract BaseState {
@@ -11,7 +11,10 @@ abstract contract BaseState {
     
     // this is the keccak 256 hash of "cloak.state.codehash" subtracted by 1
     bytes32 private constant _CODEHASH_SLOT = 0x300dd68656ddd8236e9e44b03078545b234db430495d4babec8803a5bbc813e2;
-     
+    
+    // this is the keccak 256 hash of "cloak.state.executor" subtracted by 1
+    bytes32 private constant _EXECUTOR_SLOT = 0xb8348531df8271f8aede09ac451eebefaf9b4f564d3006bd336f1747c0d8d659;
+
     bytes32 internal constant _ACCOUNT_HASH = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
 
     function _setRollBack(address account) internal {
@@ -23,13 +26,36 @@ abstract contract BaseState {
         return StorageSlot.getAddressSlot(_ROLLBACK_SLOT).value;
     }
 
+    function _setExecutor(address account) internal {
+        require(account != address(0), "BaseState: account is the zero address");
+        StorageSlot.getAddressSlot(_EXECUTOR_SLOT).value = account;
+    }
+
+    function _getExecutor() internal view returns(address) {
+        return StorageSlot.getAddressSlot(_EXECUTOR_SLOT).value;
+    }
+
+    modifier onlyExecutor() {
+        require(_getExecutor() == msg.sender, "State: caller is not the executor");
+        _;
+    }
+
+    modifier onlyInitialized() {
+        require(_getExecutor() == address(0), "StateFactory: executor has already setting");
+        _;
+    }
+
     function _clearRollBackAndCodeHash() internal {
         StorageSlot.getBytes32Slot(_CODEHASH_SLOT).value = bytes32(0);
         StorageSlot.getAddressSlot(_ROLLBACK_SLOT).value = address(0);
+        StorageSlot.getAddressSlot(_EXECUTOR_SLOT).value = address(0);
     }
 
     function _setCodeHash(address account) internal {
-        bytes32 codehash = Address.codehash(account);
+        bytes32 codehash;
+        assembly {
+            codehash := extcodehash(account)
+        }
         require(codehash != _ACCOUNT_HASH, 
             "BaseState: account is a common address");
         StorageSlot.getBytes32Slot(_CODEHASH_SLOT).value = codehash;

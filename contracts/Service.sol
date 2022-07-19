@@ -3,12 +3,14 @@ pragma solidity >=0.8.7;
 
 import "./interface/proxy.sol";
 import "./Network.sol";
-import "./utils/Address.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "./ProxyFactory.sol";
 
 contract Service is Network {
     using Address for address;
     address public state;
+    ProxyFactory factory;
+
     struct Escrow {
         address master;
         bool enhanced;
@@ -17,6 +19,7 @@ contract Service is Network {
     mapping(address=> Escrow) public escrows;
     constructor(address _state) {
         state = _state;
+        factory = new ProxyFactory();
     }
 
     modifier onlyEscrow(address addr) {
@@ -36,11 +39,19 @@ contract Service is Network {
         _;
     }
 
+    function proxyFactory() public view returns(address) {
+        return address(factory);
+    }
+
     function escrow(
         IProxy proxy
     ) public onlyNotEscrow(address(proxy)) {
-        address logic = proxy.setImplementation(state);
+        address logic = factory.getImplementation(proxy);
         require(logic != state, "Service: contract escrow should be after implementated");
+        require (factory.getAdmin(proxy) == address(factory), 
+            "Service: please complete changeAdmin in proxy first");
+            
+        factory.upgrade(proxy, state);
         proxy.escrow(logic);
         escrows[address(proxy)] = Escrow(msg.sender, false);
     }
@@ -84,12 +95,5 @@ contract Service is Network {
         for(uint8 i = 0; i < proxy.length; i++) {
             updateState(proxy[i], data[i]);
         }
-    }
-
-    event ResponseNewProxy(address indexed newproxy);
-    function createNewProxy() public {
-        ProxyFactory proxy = new ProxyFactory();
-        proxy.setMaster(msg.sender);
-        emit ResponseNewProxy(address(proxy));
     }
 }

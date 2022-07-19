@@ -2,27 +2,32 @@
 pragma solidity >=0.8.7;
 
 import "./State.sol";
-import "./Proxy.sol";
+import "./utils/EIP1967Protocol.sol";
 
-contract StateFactory is BaseState, Proxy {
+contract StateFactory is BaseState, EIP1967Protocol {
     function updateState(
         bytes32 proof, 
         bytes32[] memory keys, 
         bytes32[] memory vals
-    ) external onlyMaster {
+    ) external onlyExecutor {
         super._updateState(proof, keys, vals);
     }
 
-    function escrow(address logic) external onlyMaster2 {
+    function escrow(address logic) external onlyInitialized {
         require(super._getRollBack() != logic, 
             "StateFactory: the same as contract or not implementated");
         
         super._setRollBack(logic);
         super._setCodeHash(logic);
-        super._setMaster(msg.sender);
+        super._setExecutor(msg.sender);
     }
 
-    function upgrade(address logic) external onlyMaster {
+    function setExecutor(address executor) external{
+        require(_getExecutor() == address(0), "StateFactory: executor has already setting");
+        _setExecutor(executor);
+    }
+
+    function upgrade(address logic) external onlyExecutor {
         require(super._getRollBack() != logic, 
             "StateFactory: new contract should be different");
 
@@ -30,13 +35,13 @@ contract StateFactory is BaseState, Proxy {
         super._setCodeHash(logic);
     }
 
-    function cancel(address master) external onlyMaster {
+    function cancel(address master) external onlyExecutor {
         address logic = super._getRollBack();
         require(logic != address(0), 
             "StateFactory: logic is the zero address");
 
         super._setImplementation(logic);
-        super._setMaster(master);
+        super._setAdmin(master);
         super._clearRollBackAndCodeHash();
     }
 }

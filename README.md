@@ -27,7 +27,8 @@
 | Cloak service is a protocol, designed to be a brige between Ethereum and the Cloak Network. |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 
-The core of the Cloak service protocol is to complete the functions of on-chain hosting and synchronization of user contracts in Ethereum. Furthermore, Cloak service also provides [Proxy Contract](/contracts/ProxyFactory.sol) to make the steps for joining our cloak network easier. To learn more about Cloak visit [Cloak docs](https://cloak-docs.readthedocs.io/en/latest/).
+The core of the Cloak service protocol is to complete the functions of on-chain hosting and synchronization of user contracts in Ethereum. Cloak service supports proxy protocol developed with [EIP1967](https://eips.ethereum.org/EIPS/eip-1967), such as [TransparentUpgradeableProxy](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/proxy/transparent/TransparentUpgradeableProxy.sol) in [Openzeppelin](https://github.com/OpenZeppelin/openzeppelin-contracts).
+ To learn more about Cloak visit [Cloak docs](https://cloak-docs.readthedocs.io/en/latest/).
 
 
 ---
@@ -85,14 +86,9 @@ contract Demo {
 After deploying the contract, bind the demo contract's address to the proxy contract.
 
 ```javascript
-proxy.setImplementation(demo.address);
+proxy.changeAdmin(proxyFactory.address);
 ```
 
-by the way, cloak service also provides a quick way to create proxy generic contract, get it:
-
-```javascript
-service.createNewProxy()
-```
 If you want to join the cloak network, you can initiate an escrow transaction in our service contract.
 
 ```javascript
