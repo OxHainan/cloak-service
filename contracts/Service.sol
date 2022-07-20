@@ -12,6 +12,7 @@ contract Service is Network {
     address public state;
     ProxyFactory _proxyFactory;
     StateFactory _stateFactory;
+    ProxyBridge _proxyBridge;
 
     struct Escrow {
         address master;
@@ -22,6 +23,7 @@ contract Service is Network {
     constructor() {
         _stateFactory = new StateFactory();
         _proxyFactory = new ProxyFactory();
+        _proxyBridge = new ProxyBridge(address(_proxyFactory));
     }
 
     modifier onlyEscrow(address addr) {
@@ -49,16 +51,23 @@ contract Service is Network {
         return address(_stateFactory);
     }
 
-    function escrow(
-        IProxy proxy
-    ) public onlyNotEscrow(address(proxy)) {
-        address logic = _proxyFactory.getImplementation(proxy);
-        require(logic != address(_stateFactory), "Service: contract escrow should be after implementated");
-        require (_proxyFactory.getAdmin(proxy) == address(_proxyFactory), 
-            "Service: please complete changeAdmin in proxy first");
+    function proxyBridge() public view returns(address) {
+        return address(_proxyBridge);
+    }
 
-        _proxyFactory.upgrade(proxy, address(_stateFactory));
-        proxy.escrow(logic);
+    function escrow(
+        IProxy proxy, address implementation
+    ) public onlyNotEscrow(address(proxy)) {
+        _proxyFactory.transferAdminShip(proxy);
+        address logic = _proxyFactory.getImplementation(proxy);
+        require(logic != address(0), "Service: escrow should be after implementated");
+        require(logic != stateFactory(), "Service: contract has alread escrowed");
+
+        require (_proxyFactory.getAdmin(proxy) == proxyFactory(), 
+            "Service: please complete changeAdmin in proxy first");
+        
+        _proxyFactory.upgrade(proxy, stateFactory());
+        proxy.initialize(implementation);
         escrows[address(proxy)] = Escrow(msg.sender, false);
     }
 
@@ -101,5 +110,16 @@ contract Service is Network {
         for(uint8 i = 0; i < proxy.length; i++) {
             updateState(proxy[i], data[i]);
         }
+    }
+
+    fallback() external {
+        bytes memory _data = msg.data;
+        address proxy;
+        assembly {
+            proxy := mload(add(_data, 0x14))
+        }
+
+        address admin = _proxyFactory.getAdmin(IProxy(proxy));
+        require(admin == proxyFactory(), "Service: incomplete admin transfer");
     }
 }

@@ -24,8 +24,8 @@ contract('CloakService', async (accounts) => {
     it('Test service', async () => {
         const proxy = await TransparentProxy.deployed();
         const service = await Service.deployed();
-        await proxy.changeAdmin(await service.proxyFactory());
-        await service.escrow(proxy.address);
+        await proxy.upgradeTo(await service.proxyBridge());
+        await service.escrow(proxy.address, Logic1.address);
         await check_address(proxy.address, _ADMIN_SLOT, await service.proxyFactory())
         await check_address(proxy.address, _EXECUTOR_SLOT, Service.address)
         await check_address(proxy.address, _ROLLBACK_SLOT, Logic1.address)
@@ -53,8 +53,8 @@ contract('CloakService', async (accounts) => {
         const logic = await Logic2.at(TransparentProxy.address);
         const proxy = await TransparentProxy.deployed();
         const service = await Service.deployed(); 
-        await proxy.changeAdmin(await service.proxyFactory());
-        await service.escrow(logic.address);
+        await proxy.upgradeTo(await service.proxyBridge());
+        await service.escrow(logic.address, Logic2.address);
         await check_address(proxy.address, _ADMIN_SLOT, await service.proxyFactory())
         await check_address(proxy.address, _EXECUTOR_SLOT, Service.address)
         await check_address(proxy.address, _ROLLBACK_SLOT, Logic2.address)

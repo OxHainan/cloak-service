@@ -13,18 +13,13 @@ contract StateFactory is BaseState, EIP1967Protocol {
         super._updateState(proof, keys, vals);
     }
 
-    function escrow(address logic) external onlyInitialized {
+    function initialize(address logic) external onlyInitialized {
         require(super._getRollBack() != logic, 
             "StateFactory: the same as contract or not implementated");
         
         super._setRollBack(logic);
         super._setCodeHash(logic);
         super._setExecutor(msg.sender);
-    }
-
-    function setExecutor(address executor) external{
-        require(_getExecutor() == address(0), "StateFactory: executor has already setting");
-        _setExecutor(executor);
     }
 
     function upgrade(address logic) external onlyExecutor {
