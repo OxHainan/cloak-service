@@ -2,9 +2,9 @@
 pragma solidity >=0.8.7;
 
 import "./State.sol";
-import "./utils/EIP1967Protocol.sol";
+import "./utils/EIP1967.sol";
 
-contract StateFactory is State, EIP1967Protocol {
+contract StateFactory is State, EIP1967 {
     function updateState(
         bytes32 proof, 
         bytes32[] memory keys, 
@@ -37,6 +37,6 @@ contract StateFactory is State, EIP1967Protocol {
 
         super._setImplementation(logic);
         super._changeAdmin(master);
-        super._clearRollBackAndCodeHash();
+        super._clearConfigure();
     }
 }

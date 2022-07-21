@@ -27,8 +27,8 @@ contract Service is Network {
         _proxyBridge = new ProxyBridge(address(_proxyFactory));
     }
 
-    modifier onlyEscrow(address addr) {
-        require(escrows[addr].master == msg.sender, 
+    modifier onlyEscrow(address proxy) {
+        require(escrows[proxy].master == msg.sender, 
             "Service: caller is not the escrow master");
         _;
     }
@@ -39,8 +39,8 @@ contract Service is Network {
         _;
     }
 
-    modifier onlyNotEnhanced(address addr) {
-        require(escrows[addr].enhanced == false, 
+    modifier onlyNotEnhanced(address proxy) {
+        require(escrows[proxy].enhanced == false, 
             "Service: escrow enchaned become effective");
         _;
     }

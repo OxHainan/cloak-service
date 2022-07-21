@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.7;
-import "./utils/EIP1967Protocol.sol";
-contract ProxyBridge is EIP1967Protocol {
+import "./utils/EIP1967.sol";
+contract ProxyBridge is EIP1967 {
     address immutable public proxyFactory;
     // string immutable public name;
 

@@ -46,7 +46,7 @@ abstract contract State {
         _;
     }
 
-    function _clearRollBackAndCodeHash() internal {
+    function _clearConfigure() internal {
         StorageSlot.getBytes32Slot(_CODEHASH_SLOT).value = bytes32(0);
         StorageSlot.getAddressSlot(_ROLLBACK_SLOT).value = address(0);
         StorageSlot.getAddressSlot(_EXECUTOR_SLOT).value = address(0);
