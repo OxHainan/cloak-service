@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.7;
 
-import "./interface/proxy.sol";
-import "./Network.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "./ProxyFactory.sol";
 import "./StateFactory.sol";
+import "./ProxyFactory.sol";
+import "./ProxyBridge.sol";
+import "./Network.sol";
+import "./interface/IStateFactory.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 contract Service is Network {
     using Address for address;
-    address public state;
     ProxyFactory _proxyFactory;
     StateFactory _stateFactory;
+    ProxyBridge _proxyBridge;
 
     struct Escrow {
         address master;
@@ -19,9 +20,11 @@ contract Service is Network {
     }
     
     mapping(address=> Escrow) public escrows;
+
     constructor() {
         _stateFactory = new StateFactory();
         _proxyFactory = new ProxyFactory();
+        _proxyBridge = new ProxyBridge(address(_proxyFactory));
     }
 
     modifier onlyEscrow(address addr) {
@@ -30,14 +33,15 @@ contract Service is Network {
         _;
     }
 
-    modifier onlyNotEscrow(address addr) {
-        require(escrows[addr].master != msg.sender, 
+    modifier onlyNotEscrow(address proxy) {
+        require(escrows[proxy].master != msg.sender, 
             "Service: contract has alread escrowed");
         _;
     }
 
     modifier onlyNotEnhanced(address addr) {
-        require(escrows[addr].enhanced == false, "Service: escrow enchaned become effective");
+        require(escrows[addr].enhanced == false, 
+            "Service: escrow enchaned become effective");
         _;
     }
 
@@ -49,46 +53,45 @@ contract Service is Network {
         return address(_stateFactory);
     }
 
-    function escrow(
-        IProxy proxy
-    ) public onlyNotEscrow(address(proxy)) {
-        address logic = _proxyFactory.getImplementation(proxy);
-        require(logic != address(_stateFactory), "Service: contract escrow should be after implementated");
-        require (_proxyFactory.getAdmin(proxy) == address(_proxyFactory), 
-            "Service: please complete changeAdmin in proxy first");
-
-        _proxyFactory.upgrade(proxy, address(_stateFactory));
-        proxy.escrow(logic);
-        escrows[address(proxy)] = Escrow(msg.sender, false);
+    function proxyBridge() public view returns(address) {
+        return address(_proxyBridge);
     }
 
-    function privacyEnhancement(address proxy) public onlyEscrow(proxy) onlyNotEnhanced(proxy) {
+    function escrow(
+        address proxy, address implementation
+    ) public onlyNotEscrow(proxy) {
+        _proxyFactory.upgradeAndChangeAdmin(proxy, stateFactory());
+        IStateFactory(proxy).initialize(implementation);
+        escrows[proxy] = Escrow(msg.sender, false);
+    }
+
+    function privacyEnhancement(
+        address proxy
+    ) public onlyEscrow(proxy) onlyNotEnhanced(proxy) {
         escrows[proxy].enhanced = true;
     }
 
     // (TODO) Wait for all state synchronization to complete
     function upgrade(
-        IProxy proxy, 
+        address proxy, 
         address logic
-    ) public onlyEscrow(address(proxy)) {
-        proxy.upgrade(logic);
+    ) public onlyEscrow(proxy) {
+        IStateFactory(proxy).upgrade(logic);
     }
 
     // (TODO) Wait for all state synchronization to complete
     function cancel(
-        IProxy proxy
-    ) public onlyEscrow(address(proxy)) onlyNotEnhanced(address(proxy)) {
-        proxy.cancel(msg.sender);
-        delete escrows[address(proxy)];
+        address proxy
+    ) public onlyEscrow(proxy) onlyNotEnhanced(proxy) {
+        IStateFactory(proxy).cancel(msg.sender);
+        delete escrows[proxy];
     }
 
     function updateState(
         address proxy, 
         bytes memory data
-    ) public onlyActive {
-        if (escrows[proxy].master != address(0)) {
-            proxy.functionCall(data);
-        }
+    ) public onlyActive onlyEscrow(proxy) {
+        proxy.functionCall(data);
     }
 
     function updateState(

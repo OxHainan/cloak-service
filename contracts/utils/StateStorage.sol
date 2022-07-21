@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.7;
 
-library State {
+library StateStorage {
     function generateStateHash(bytes32[] memory keys) internal view returns(bytes32) {
         require(keys.length > 0, "State: length cannot be empty");
         bytes memory vals = new bytes(keys.length * 32);

@@ -25,7 +25,7 @@ abstract contract EIP1967Protocol {
 
     function _setImplementation(address newImplementation) internal {
         require(Address.isContract(newImplementation), 
-            "proxy: new implementation is not a contract");
+            "EIP1967: new implementation is not a contract");
         StorageSlot.getAddressSlot(_IMPLEMENTATION_SLOT).value = newImplementation;
     }
 
@@ -33,13 +33,17 @@ abstract contract EIP1967Protocol {
         return StorageSlot.getAddressSlot(_ADMIN_SLOT).value;
     }
 
-    function _setAdmin(address newAdmin) internal {
-        require(newAdmin != address(0), "proxy: new master is the zero address");
+    function _setAdmin(address newAdmin) private {
+        require(newAdmin != address(0), "EIP1967: new admin is the zero address");
         StorageSlot.getAddressSlot(_ADMIN_SLOT).value = newAdmin;
     }
 
+    function _changeAdmin(address newAdmin) internal {
+        _setAdmin(newAdmin);
+    }
+
     modifier onlyAdmin() {
-        require(_getAdmin() == msg.sender, "proxy: caller is not the master");
+        require(_getAdmin() == msg.sender, "EIP1967: caller is not the admin");
         _;
     }
 }

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.7;
 
+import "./utils/StateStorage.sol";
 import "@openzeppelin/contracts/utils/StorageSlot.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./utils/State.sol";
 
-abstract contract BaseState {
+abstract contract State {
+    using StateStorage for bytes32[];
     // this is the keccak 256 hash of "cloak.state.rollback" subtracted by 1
     bytes32 private constant _ROLLBACK_SLOT = 0x2a7ee7a990a244bda6b8218d6cc50c824030ffcca1203a6c59bdca9cb30f9e58;
     
@@ -15,7 +16,7 @@ abstract contract BaseState {
     // this is the keccak 256 hash of "cloak.state.executor" subtracted by 1
     bytes32 private constant _EXECUTOR_SLOT = 0xb8348531df8271f8aede09ac451eebefaf9b4f564d3006bd336f1747c0d8d659;
 
-    bytes32 internal constant _ACCOUNT_HASH = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+    bytes32 private constant _ACCOUNT_HASH = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
 
     function _setRollBack(address account) internal {
         require(account != address(0), "BaseState: account is the zero address");
@@ -71,10 +72,10 @@ abstract contract BaseState {
         bytes32[] memory vals
     ) internal {
         bytes32 _proof = keccak256(abi.encodePacked(
-            _getCodeHash(), State.generateStateHash(keys)
+            _getCodeHash(), keys.generateStateHash()
         ));
 
         require(_proof == proof, "State: verification proof failed");
-        State.sstore(keys, vals);
+        keys.sstore(vals);
     }
 }
