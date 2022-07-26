@@ -107,7 +107,8 @@ contract('CloakService', async (accounts) => {
             vals
         )
 
-        await service.registerNode(accounts[0])
+        await service.registerNode()
+        await service.authorize(accounts[0])
         await service.updateState(request.to, request.data)
 
         for (let i = 0; i < vals.length; i++) {

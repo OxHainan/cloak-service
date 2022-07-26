@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 abstract contract Network is Ownable {
     struct Node {
         bool active;
+        bool authorize;
         uint64 registerTime;
     }
 
@@ -16,8 +17,9 @@ abstract contract Network is Ownable {
         _;
     }
 
-    modifier whenNotRegister(address node) {
-        require(isRegistered[node]== false, "Network: node has already registered");
+    modifier whenNotRegister() {
+        require(isRegistered[msg.sender]== false, 
+            "Network: node has already registered");
         _;
     }
 
@@ -26,9 +28,27 @@ abstract contract Network is Ownable {
         _;
     }
 
-    function registerNode(address node) public onlyOwner whenNotRegister(node) {
-        isRegistered[node] = true;
-        nodes[node] = Node(true, uint64(block.timestamp));
+    modifier onlyNotAuthorized(address node) {
+        require(nodes[node].authorize == false, 
+            "Network: node has already authorized");
+        _;
+    }
+
+    function authorize(
+        address node
+    ) public onlyOwner onlyNotAuthorized(node) whenRegister(node) {
+        Node storage n = nodes[node];
+        n.authorize = true;
+        n.active = true;
+    }
+
+    function registerNode() public whenNotRegister() {
+        isRegistered[msg.sender] = true;
+        nodes[msg.sender] = Node(
+            false, 
+            false, 
+            uint64(block.timestamp)
+        );
     }
 
     function removeNode(address node) public onlyOwner whenRegister(node) {
@@ -36,7 +56,10 @@ abstract contract Network is Ownable {
         delete isRegistered[node];
     }
 
-    function updateNode(address node, bool active) public onlyOwner whenRegister(node) {
+    function updateNode(
+        address node, 
+        bool active
+    ) public onlyOwner whenRegister(node) {
         require(nodes[node].active != active, "Network: cannot update node");
         nodes[node].active = active;
     }

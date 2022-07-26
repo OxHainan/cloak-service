@@ -3,11 +3,10 @@ pragma solidity >=0.8.7;
 import "./utils/EIP1967.sol";
 contract ProxyBridge is EIP1967 {
     address immutable public proxyFactory;
-    // string immutable public name;
+    string constant public name = "Cloak Proxy Bridge";
 
     constructor(address _proxyFactory) {
         proxyFactory = _proxyFactory;
-        // name = "Cloak Proxy Bridge";
     }
 
     modifier onlyFactorier() {
