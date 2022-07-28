@@ -18,8 +18,8 @@ contract StateFactory is State, EIP1967 {
             "StateFactory: the same as contract or not implementated");
         
         super._setRollBack(logic);
-        super._setCodeHash(logic);
         super._setExecutor(msg.sender);
+        updateProof(logic);
     }
 
     function upgrade(address logic) external onlyExecutor {
@@ -27,7 +27,7 @@ contract StateFactory is State, EIP1967 {
             "StateFactory: new contract should be different");
 
         super._setRollBack(logic);
-        super._setCodeHash(logic);
+        updateProof(logic);
     }
 
     function cancel(address master) external onlyExecutor {
@@ -38,5 +38,25 @@ contract StateFactory is State, EIP1967 {
         super._setImplementation(logic);
         super._changeAdmin(master);
         super._clearConfigure();
+    }
+
+    function updateProof(address account) private {
+        bytes32 proof = generateEscrowProof(account);
+        super._setProofHash(proof);
+    }
+
+    function generateEscrowProof(address account) private view returns(bytes32 proof) {
+        address state = super._getImplementation();
+        bytes32 codehash;
+        assembly {
+            codehash := extcodehash(account)
+        }
+
+        require(codehash != _ACCOUNT_HASH, 
+            "BaseState: account is a common address");
+        
+        proof = keccak256(abi.encodePacked(
+            codehash, state
+        ));
     }
 }

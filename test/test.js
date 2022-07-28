@@ -6,7 +6,7 @@ const TransparentProxy = artifacts.require("TransparentProxy");
 
 const _IMPLEMENTATION_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 const _ROLLBACK_SLOT = "0x2a7ee7a990a244bda6b8218d6cc50c824030ffcca1203a6c59bdca9cb30f9e58";
-const _CODEHASH_SLOT = "0x300dd68656ddd8236e9e44b03078545b234db430495d4babec8803a5bbc813e2";
+const _PROOF_SLOT = "0x2c3b1d89f196b8b08364560cca554b8f81cb28533bd8b87aacb02775960713c2";
 const _ADMIN_SLOT = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";
 const _EXECUTOR_SLOT = "0xb8348531df8271f8aede09ac451eebefaf9b4f564d3006bd336f1747c0d8d659";
 const nil_address = "0x0000000000000000000000000000000000000000";
@@ -16,9 +16,11 @@ contract('CloakService', async (accounts) => {
         assert.equal(web3.utils.toChecksumAddress(res), target)
     }
 
-    async function check_code(proxy, obser, target) {
-        let codehash = await web3.eth.getStorageAt(proxy, obser);
-        assert.equal(codehash, web3.utils.keccak256(target));
+    async function check_proof(proxy, obser, target) {
+        let proof = await web3.eth.getStorageAt(proxy, obser);
+        let state_addr = await web3.eth.getStorageAt(proxy, _IMPLEMENTATION_SLOT);
+        let _proof = web3.utils.encodePacked(web3.utils.keccak256(target), state_addr)
+        assert.equal(proof, web3.utils.keccak256(_proof));
     }
     
     it('Test service', async () => {
@@ -31,7 +33,7 @@ contract('CloakService', async (accounts) => {
         await check_address(proxy.address, _ROLLBACK_SLOT, Logic1.address)
         await check_address(proxy.address, _IMPLEMENTATION_SLOT, await service.stateFactory())
         assert.equal((await service.escrows(proxy.address)).master, accounts[0])
-        await check_code(proxy.address, _CODEHASH_SLOT, await web3.eth.getCode(Logic1.address));
+        await check_proof(proxy.address, _PROOF_SLOT, await web3.eth.getCode(Logic1.address));
     })
 
     it('should update contract', async () => {
@@ -60,7 +62,7 @@ contract('CloakService', async (accounts) => {
         await check_address(proxy.address, _ROLLBACK_SLOT, Logic2.address)
         await check_address(proxy.address, _IMPLEMENTATION_SLOT, await service.stateFactory())
         assert.equal((await service.escrows(logic.address)).master, accounts[0])
-        await check_code(logic.address, _CODEHASH_SLOT, await web3.eth.getCode(Logic2.address));
+        await check_proof(logic.address, _PROOF_SLOT, await web3.eth.getCode(Logic2.address));
     });
 
     it('should transfer owner ship', async () => {
@@ -92,7 +94,7 @@ contract('CloakService', async (accounts) => {
         let packed = web3.utils.encodePacked(vals[0], vals[1], vals[2]);
         let proof = web3.utils.keccak256(
             web3.utils.encodePacked(
-                await web3.eth.getStorageAt(TransparentProxy.address, _CODEHASH_SLOT),
+                await web3.eth.getStorageAt(TransparentProxy.address, _PROOF_SLOT),
                 web3.utils.keccak256(packed)
             ))
         
