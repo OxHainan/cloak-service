@@ -60,6 +60,7 @@ contract Service is Network {
     function escrow(
         address proxy, address implementation
     ) public onlyNotEscrow(proxy) {
+        require(proxy != implementation, "Service: implementation cannot be proxy");
         _proxyFactory.upgradeAndChangeAdmin(proxy, stateFactory());
         IStateFactory(proxy).initialize(implementation);
         escrows[proxy] = Escrow(msg.sender, false);
@@ -90,7 +91,8 @@ contract Service is Network {
     function updateState(
         address proxy, 
         bytes memory data
-    ) public onlyActive onlyEscrow(proxy) {
+    ) public onlyActive {
+        require(escrows[proxy].master != address(0), "Service: contract is not escrows");
         proxy.functionCall(data);
     }
 
