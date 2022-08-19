@@ -83,13 +83,13 @@ contract Demo {
 }
 ```
 
-After deploying the contract, bind the demo contract's address to the proxy contract.
+If you want to join the cloak network, you can upgrade to proxy bridage.
 
 ```javascript
-proxy.changeAdmin(proxyFactory.address);
+proxy.upgradeTo(proxyBridge.address);
 ```
 
-If you want to join the cloak network, you can initiate an escrow transaction in our service contract.
+Initiate an escrow transaction in our service contract.
 
 ```javascript
 service.escrow(proxy.address)
