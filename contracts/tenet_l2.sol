@@ -2,6 +2,10 @@
 pragma solidity >=0.8.7;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+interface Tenet {
+    function withdraw(address token, address user, uint256 amount) external;
+}
+
 contract Token is Ownable {
     uint256 private constant MAX_UINT256 = 2**256 - 1;
     mapping(address => uint256) public balances;
@@ -149,7 +153,7 @@ contract Tenet_L2 is Ownable {
         address token,
         address to,
         uint256 amount
-    ) public onlyOwner onlyRegister(token) {
+    ) public onlyRegister(token) {
         Token t = tokens[token];
         t.mint(to, amount);
         emit Mint(token, to, amount);
@@ -161,13 +165,23 @@ contract Tenet_L2 is Ownable {
         uint256 indexed amount
     );
 
+    event Dispatch(bytes payload);
+
     function withdraw(address token, uint256 amount)
         public
         onlyRegister(token)
     {
         Token t = tokens[token];
         t.burn(msg.sender, amount);
-        emit Withdraw(token, msg.sender, amount);
+        emit Dispatch(
+            abi.encodeWithSelector(
+                Tenet.withdraw.selector,
+                token,
+                msg.sender,
+                amount
+            )
+        );
+        // emit Withdraw(token, msg.sender, amount);
     }
 
     function getTokenSupply(address token)
