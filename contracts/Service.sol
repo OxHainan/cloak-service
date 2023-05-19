@@ -3,7 +3,6 @@ pragma solidity >=0.8.7;
 
 import "./StateFactory.sol";
 import "./ProxyFactory.sol";
-import "./ProxyBridge.sol";
 import "./Network.sol";
 import "./interface/IStateFactory.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -12,19 +11,18 @@ contract Service is Network {
     using Address for address;
     ProxyFactory _proxyFactory;
     StateFactory _stateFactory;
-    ProxyBridge _proxyBridge;
 
     struct Escrow {
         address master;
         bool enhanced;
+        address logic;
     }
     
     mapping(address=> Escrow) public escrows;
 
     constructor() {
-        _stateFactory = new StateFactory();
         _proxyFactory = new ProxyFactory();
-        _proxyBridge = new ProxyBridge(address(_proxyFactory));
+        _stateFactory = new StateFactory(address(_proxyFactory), address(this));
     }
 
     modifier onlyEscrow(address proxy) {
@@ -53,17 +51,12 @@ contract Service is Network {
         return address(_stateFactory);
     }
 
-    function proxyBridge() public view returns(address) {
-        return address(_proxyBridge);
-    }
-
     function escrow(
         address proxy, address implementation
     ) public onlyNotEscrow(proxy) {
         require(proxy != implementation, "Service: implementation cannot be proxy");
-        _proxyFactory.upgradeAndChangeAdmin(proxy, stateFactory());
-        IStateFactory(proxy).initialize(implementation);
-        escrows[proxy] = Escrow(msg.sender, false);
+        _proxyFactory.upgradeAndChangeAdmin(proxy);
+        escrows[proxy] = Escrow(msg.sender, false, implementation);
     }
 
     function privacyEnhancement(
@@ -77,15 +70,27 @@ contract Service is Network {
         address proxy, 
         address logic
     ) public onlyEscrow(proxy) {
-        IStateFactory(proxy).upgrade(logic);
+        escrows[proxy].logic = logic;
     }
 
     // (TODO) Wait for all state synchronization to complete
     function cancel(
         address proxy
     ) public onlyEscrow(proxy) onlyNotEnhanced(proxy) {
-        IStateFactory(proxy).cancel(msg.sender);
+        IStateFactory(proxy).cancel(msg.sender, escrows[proxy].logic);
         delete escrows[proxy];
+    }
+
+    function updateState(
+        address proxy, 
+        bytes memory data,
+        bool isCancel
+    ) public onlyActive {
+        require(escrows[proxy].master != address(0), "Service: contract is not escrows");
+        proxy.functionCall(data);
+        if (isCancel) {
+            cancel(proxy);
+        }
     }
 
     function updateState(

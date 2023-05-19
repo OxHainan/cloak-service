@@ -5,58 +5,42 @@ import "./State.sol";
 import "./utils/EIP1967.sol";
 
 contract StateFactory is State, EIP1967 {
+    address immutable public proxyFactory;
+    address immutable public executor;
+    string constant public name = "Cloak Proxy Bridge";
+
+    constructor(address _proxyFactory, address _executor) {
+        proxyFactory = _proxyFactory;
+        executor = _executor;
+    }
+
+    modifier onlyFactorier() {
+        require(proxyFactory == msg.sender, "ProxyBridge: caller is forbidden");
+        _;
+    }
+
+    function changeAdmin() external onlyFactorier{
+        require(super._getAdmin() == tx.origin, "ProxyBridge: caller is not origin admin");
+        super._changeAdmin(proxyFactory);
+    }
+
     function updateState(
-        bytes32 proof, 
         bytes32[] memory keys, 
         bytes32[] memory vals
     ) external onlyExecutor {
-        super._updateState(proof, keys, vals);
+        super._updateState(keys, vals);
     }
 
-    function initialize(address logic) external onlyInitialized {
-        require(super._getRollBack() != logic, 
-            "StateFactory: the same as contract or not implementated");
-        
-        super._setRollBack(logic);
-        super._setExecutor(msg.sender);
-        updateProof(logic);
+    modifier onlyExecutor() {
+        require(executor== msg.sender, "State: caller is not the executor");
+        _;
     }
 
-    function upgrade(address logic) external onlyExecutor {
-        require(super._getRollBack() != logic, 
-            "StateFactory: new contract should be different");
-
-        super._setRollBack(logic);
-        updateProof(logic);
-    }
-
-    function cancel(address master) external onlyExecutor {
-        address logic = super._getRollBack();
+    function cancel(address master, address logic) external onlyExecutor {
         require(logic != address(0), 
             "StateFactory: logic is the zero address");
 
         super._setImplementation(logic);
         super._changeAdmin(master);
-        super._clearConfigure();
-    }
-
-    function updateProof(address account) private {
-        bytes32 proof = generateEscrowProof(account);
-        super._setProofHash(proof);
-    }
-
-    function generateEscrowProof(address account) private view returns(bytes32 proof) {
-        address state = super._getImplementation();
-        bytes32 codehash;
-        assembly {
-            codehash := extcodehash(account)
-        }
-
-        require(codehash != _ACCOUNT_HASH, 
-            "BaseState: account is a common address");
-        
-        proof = keccak256(abi.encodePacked(
-            codehash, state
-        ));
     }
 }

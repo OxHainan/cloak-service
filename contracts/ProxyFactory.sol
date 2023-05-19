@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.7;
-import "./interface/IProxyBridge.sol";
+import "./interface/IStateFactory.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 
@@ -12,9 +12,8 @@ contract ProxyFactory is Ownable {
     }
 
     function upgradeAndChangeAdmin(
-        address proxy, 
-        address implementation
+        address proxy
     ) public onlyOwner {
-        IProxyBridge(proxy).upgradeAndChangeAdmin(implementation);
+        IStateFactory(proxy).changeAdmin();
     }
 }
